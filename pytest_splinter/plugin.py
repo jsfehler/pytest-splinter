@@ -379,11 +379,8 @@ def _take_screenshot(
     Invoked from session and function browser fixtures.
     """
     slaveoutput = getattr(request.config, 'slaveoutput', None)
-    try:
-        names = junitxml.mangle_testnames(request.node.nodeid.split("::"))
-    except AttributeError:
-        # pytest>=2.9.0
-        names = junitxml.mangle_test_address(request.node.nodeid)
+
+    names = junitxml.mangle_test_address(request.node.nodeid)
 
     classname = '.'.join(names[:-1])
     screenshot_dir = os.path.join(splinter_screenshot_dir, classname)
@@ -392,20 +389,26 @@ def _take_screenshot(
     )
     screenshot_file_name = screenshot_file_name_format.format(format='png')
     screenshot_html_file_name = screenshot_file_name_format.format(format='html')
+
     if not slaveoutput:
         if not os.path.exists(screenshot_dir):
             os.makedirs(screenshot_dir)
     else:
         screenshot_dir = session_tmpdir.ensure('screenshots', dir=True).strpath
+
     screenshot_png_path = os.path.join(screenshot_dir, screenshot_file_name)
     screenshot_html_path = os.path.join(screenshot_dir, screenshot_html_file_name)
+
     LOGGER.info('Saving screenshot to %s', screenshot_dir)
+
     try:
         splinter_screenshot_getter_html(browser_instance, screenshot_html_path)
         splinter_screenshot_getter_png(browser_instance, screenshot_png_path)
+
         if request.node.splinter_failure.longrepr:
             reprtraceback = request.node.splinter_failure.longrepr.reprtraceback
             reprtraceback.extraline = _screenshot_extraline(screenshot_png_path, screenshot_html_path)
+
         if slaveoutput is not None:
             with codecs.open(screenshot_html_path, encoding=splinter_screenshot_encoding) as html_fd:
                 with open(screenshot_png_path, 'rb') as fd:
