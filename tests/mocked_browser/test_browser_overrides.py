@@ -23,7 +23,8 @@ def test_wait_for_condition_timeout(browser, monkeypatch):
 
     monkeypatch.setattr(time, 'time', fake_time)
 
-    pytest.raises(Exception, browser.wait_for_condition, (lambda browser: False), 10)
+    with pytest.raises(Exception) as e:
+        browser.wait_for_condition(lambda browser: False, 10)
 
 
 def test_wait_for_condition(mocked_browser, browser, monkeypatch):
