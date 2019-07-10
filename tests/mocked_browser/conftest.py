@@ -32,6 +32,6 @@ def mocked_browser(browser_pool, request):
         mocked_browser.driver.save_screenshot = save_screenshot
         return mocked_browser
 
-    patcher = mock.patch('pytest_splinter.plugin.splinter.Browser', mocked_browser)
+    patcher = mock.patch('pytest_splinter.plugin.Browser', mocked_browser)
     yield patcher.start()
     patcher.stop()
