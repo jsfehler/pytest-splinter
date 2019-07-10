@@ -16,9 +16,6 @@ before_install:
 env:
   matrix:
     - TESTENV=linters
-    - TESTENV=py36
-    - TESTENV=py37
-    - TESTENV=py38-dev
     - TESTENV=coveralls
 matrix:
   include:
@@ -37,6 +34,3 @@ script: tox -e $TESTENV
 branches:
   except:
     - /^\d/
-notifications:
-  email:
-  - bubenkoff@gmail.com
