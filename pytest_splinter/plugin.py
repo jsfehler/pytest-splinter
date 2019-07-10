@@ -36,25 +36,6 @@ LOGGER = logging.getLogger(__name__)
 NAME_RE = re.compile(r'[\W]')
 
 
-def _visit(self, old_visit, url):
-    """Override splinter's visit to avoid unnecessary checks and add wait_until instead."""
-    old_visit(url)
-    self.wait_for_condition(self.visit_condition, timeout=self.visit_condition_timeout)
-
-
-def _wait_for_condition(self, condition=None, timeout=None, poll_frequency=0.5, ignored_exceptions=None):
-    """Wait for given javascript condition."""
-    condition = functools.partial(condition or self.visit_condition, self)
-
-    timeout = timeout or self.wait_time
-
-    return wait.WebDriverWait(
-        self.driver, timeout, poll_frequency=poll_frequency, ignored_exceptions=ignored_exceptions
-    ).until(
-        lambda browser: condition()
-    )
-
-
 def _screenshot_extraline(screenshot_png_file_name, screenshot_html_file_name):
     return """
 ===========================
@@ -65,19 +46,48 @@ html: %s
 """ % (screenshot_png_file_name, screenshot_html_file_name)
 
 
-def Browser(*args, **kwargs):
-    """Emulate splinter's Browser."""
-    visit_condition = kwargs.pop('visit_condition')
-    visit_condition_timeout = kwargs.pop('visit_condition_timeout')
-    browser = splinter.Browser(*args, **kwargs)
-    browser.switch_to = browser.driver.switch_to
-    browser.wait_for_condition = functools.partial(_wait_for_condition, browser)
-    if hasattr(browser, 'driver'):
-        browser.visit_condition = visit_condition
-        browser.visit_condition_timeout = visit_condition_timeout
-        browser.visit = functools.partial(_visit, browser, browser.visit)
-    browser.__splinter_browser__ = True
-    return browser
+def Browser(driver_name="firefox", visit_condition=None, visit_condition_timeout=None, **kwargs):
+    # Get base class. ie: chrome, firefox, remote
+    driver = splinter.browser._DRIVERS[driver_name]
+
+    class PytestSplinterBrowser(driver):
+        def __init__(self, *args, visit_condition=None, visit_condition_timeout=None, **kwargs):
+            super(PytestSplinterBrowser, self).__init__(*args, **kwargs)
+
+            self.visit_condition = visit_condition
+            self.visit_condition_timeout = visit_condition_timeout
+
+            self.switch_to = self.driver.switch_to
+
+            self.__splinter_browser__ = True
+
+        def wait_for_condition(self, condition=None, timeout=None, poll_frequency=0.5, ignored_exceptions=None):
+            """Wait for given javascript condition."""
+            condition = functools.partial(condition or self.visit_condition, self)
+
+            timeout = self.visit_condition_timeout or self.wait_time
+
+            return wait.WebDriverWait(
+                self.driver,
+                timeout,
+                poll_frequency=poll_frequency,
+                ignored_exceptions=ignored_exceptions
+            ).until(lambda browser: condition())
+
+        def visit(self, url):
+            """Override splinter's visit to add wait_for_condition call."""
+            super(PytestSplinterBrowser, self).visit(url)
+            self.wait_for_condition(
+                self.visit_condition,
+                self.visit_condition_timeout,
+            )
+
+
+    return PytestSplinterBrowser(
+        visit_condition=visit_condition,
+        visit_condition_timeout=visit_condition_timeout,
+        **kwargs,
+    )
 
 
 @pytest.fixture(scope='session')  # pragma: no cover
@@ -281,12 +291,6 @@ def session_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('pytest-splinter')
 
 
-@pytest.fixture(scope='session')
-def splinter_browser_class(request):
-    """Browser class to use for browser instance creation."""
-    return Browser
-
-
 def get_args(driver=None,
              download_dir=None,
              download_ftypes=None,
@@ -487,7 +491,6 @@ def browser_instance_getter(
         splinter_selenium_speed,
         splinter_webdriver_executable,
         splinter_window_size,
-        splinter_browser_class,
         splinter_clean_cookies_urls,
         splinter_screenshot_getter_html,
         splinter_screenshot_getter_png,
@@ -511,10 +514,12 @@ def browser_instance_getter(
                           headless=splinter_headless,
                           driver_kwargs=splinter_driver_kwargs)
         try:
-            return splinter_browser_class(
-                splinter_webdriver, visit_condition=splinter_browser_load_condition,
+            return Browser(
+                splinter_webdriver,
+                visit_condition=splinter_browser_load_condition,
                 visit_condition_timeout=splinter_browser_load_timeout,
-                wait_time=splinter_wait_time, **kwargs
+                wait_time=splinter_wait_time,
+                **kwargs
             )
         except Exception:  # NOQA
             if retry_count > 1:
