@@ -18,8 +18,19 @@ env:
     - TESTENV=linters
     - TESTENV=py36
     - TESTENV=py37
-    - TESTENV=py38
+    - TESTENV=py38-dev
     - TESTENV=coveralls
+matrix:
+  include:
+    - python: 3.6
+      dist: xenial
+      env: TESTENV=py36
+    - python: 3.7
+      dist: xenial
+      env: TESTENV=py37
+    - python: 3.8-dev
+      dist: xenial
+      env: TESTENV=py38
 install:
   - pip install tox
 script: tox -e $TESTENV
