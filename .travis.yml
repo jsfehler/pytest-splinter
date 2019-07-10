@@ -16,10 +16,9 @@ before_install:
 env:
   matrix:
     - TESTENV=linters
-    - TESTENV=py27
-    - TESTENV=py27-xdist
-    - TESTENV=py27-pytest-latest
     - TESTENV=py36
+    - TESTENV=py37
+    - TESTENV=py38
     - TESTENV=coveralls
 install:
   - pip install tox
