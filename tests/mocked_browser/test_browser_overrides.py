@@ -14,7 +14,7 @@ def test_wait_for_condition_default(browser, splinter_browser_load_condition, sp
     assert True
 
 
-def test_wait_for_condition_timeout(browser, monkeypatch):
+def test_wait_for_condition_timeout(mocked_browser, monkeypatch):
     """Check timeouts."""
     ticks = iter([1, 2, 15])
 
@@ -24,7 +24,7 @@ def test_wait_for_condition_timeout(browser, monkeypatch):
     monkeypatch.setattr(time, 'time', fake_time)
 
     with pytest.raises(Exception) as e:
-        browser.wait_for_condition(lambda browser: False, 10)
+        mocked_browser.wait_for_condition(lambda browser: False, 10)
 
 
 def test_wait_for_condition(mocked_browser, browser, monkeypatch):
@@ -48,6 +48,6 @@ def test_wait_for_condition(mocked_browser, browser, monkeypatch):
     monkeypatch.setattr(time, 'time', fake_time)
     monkeypatch.setattr(time, 'sleep', fake_sleep)
 
-    assert browser.wait_for_condition(condition, 10)
+    assert mocked_browser.wait_for_condition(condition, 10)
 
     assert sleeps == [0.5]
