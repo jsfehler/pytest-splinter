@@ -26,9 +26,9 @@ setup(
     url='https://github.com/pytest-dev/pytest-splinter',
     install_requires=[
         'setuptools',
-        'splinter>=0.9.0',
+        'splinter>=0.11.0',
         'selenium',
-        'pytest>=3.0.0',
+        'pytest>=5.0.0',
         'urllib3',
     ],
     classifiers=[
