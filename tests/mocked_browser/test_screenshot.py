@@ -17,7 +17,7 @@ def test_browser_screenshot_normal(mocked_browser, testdir):
     assert testdir.tmpdir.join('test_browser_screenshot_normal', 'test_screenshot-browser.png').isfile()
 
 
-@mock.patch('pytest_splinter.plugin.splinter.Browser')
+@mock.patch('pytest_splinter.plugin.Browser')
 def test_browser_screenshot_error(mocked_browser, testdir):
     """Test warning with error during taking screenshots on test failure."""
     mocked_browser.return_value.driver.save_screenshot.side_effect = Exception('Failed')
