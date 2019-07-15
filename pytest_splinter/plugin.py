@@ -338,23 +338,6 @@ def get_args(driver=None,
 
 
 @pytest.fixture(scope='session')
-def splinter_screenshot_getter_png():
-    """Screenshot getter function: png."""
-    def getter(browser, path):
-        browser.driver.save_screenshot(path)
-    return getter
-
-
-@pytest.fixture(scope='session')
-def splinter_screenshot_getter_html(splinter_screenshot_encoding):
-    """Screenshot getter function: html."""
-    def getter(browser, path):
-        with codecs.open(path, 'w', encoding=splinter_screenshot_encoding) as fd:
-            fd.write(browser.html)
-    return getter
-
-
-@pytest.fixture(scope='session')
 def splinter_clean_cookies_urls():
     """List of urls to clean cookies on their domains."""
     return []
@@ -366,8 +349,6 @@ def _take_screenshot(
         fixture_name,
         session_tmpdir,
         splinter_screenshot_dir,
-        splinter_screenshot_getter_html,
-        splinter_screenshot_getter_png,
         splinter_screenshot_encoding,
 ):
     """Capture a screenshot as .png and .html.
@@ -380,37 +361,39 @@ def _take_screenshot(
 
     classname = '.'.join(names[:-1])
     screenshot_dir = os.path.join(splinter_screenshot_dir, classname)
-    screenshot_file_name_format = '{0}.{{format}}'.format(
-        '{0}-{1}'.format(names[-1][:128 - len(fixture_name) - 5], fixture_name).replace(os.path.sep, '-')
-    )
-    screenshot_file_name = screenshot_file_name_format.format(format='png')
-    screenshot_html_file_name = screenshot_file_name_format.format(format='html')
+
     if not slaveoutput:
         if not os.path.exists(screenshot_dir):
             os.makedirs(screenshot_dir)
     else:
         screenshot_dir = session_tmpdir.ensure('screenshots', dir=True).strpath
-    screenshot_png_path = os.path.join(screenshot_dir, screenshot_file_name)
-    screenshot_html_path = os.path.join(screenshot_dir, screenshot_html_file_name)
-    LOGGER.info('Saving screenshot to %s', screenshot_dir)
+
+    screenshot_base_file_name = '{0}-{1}-'.format(names[-1][:128 - len(fixture_name) - 5], fixture_name).replace(os.path.sep, '-')
+    screenshot_path = os.path.join(screenshot_dir, screenshot_base_file_name)
+
+    LOGGER.info('Saving screenshot to {}'.format(screenshot_dir))
+
     try:
-        splinter_screenshot_getter_html(browser_instance, screenshot_html_path)
-        splinter_screenshot_getter_png(browser_instance, screenshot_png_path)
+        html_snapshot_path = browser_instance.html_snapshot(
+            screenshot_path, encoding=splinter_screenshot_encoding,
+        )
+        screenshot_png_path = browser_instance.screenshot(screenshot_path)
+
         if request.node.splinter_failure.longrepr:
             reprtraceback = request.node.splinter_failure.longrepr.reprtraceback
-            reprtraceback.extraline = _screenshot_extraline(screenshot_png_path, screenshot_html_path)
+            reprtraceback.extraline = _screenshot_extraline(screenshot_png_path, html_snapshot_path)
         if slaveoutput is not None:
-            with codecs.open(screenshot_html_path, encoding=splinter_screenshot_encoding) as html_fd:
+            with codecs.open(html_snapshot_path, encoding=splinter_screenshot_encoding) as html_fd:
                 with open(screenshot_png_path, 'rb') as fd:
                     slaveoutput.setdefault('screenshots', []).append({
                         'class_name': classname,
                         'files': [
                             {
-                                'file_name': screenshot_file_name,
+                                'file_name': screenshot_png_path,
                                 'content': fd.read(),
                             },
                             {
-                                'file_name': screenshot_html_file_name,
+                                'file_name': html_snapshot_path,
                                 'content': html_fd.read(),
                                 'encoding': splinter_screenshot_encoding,
                             }]
@@ -426,8 +409,6 @@ def _browser_screenshot_session(
         splinter_session_scoped_browser,
         splinter_screenshot_dir,
         splinter_make_screenshot_on_failure,
-        splinter_screenshot_getter_html,
-        splinter_screenshot_getter_png,
         splinter_screenshot_encoding,
 ):
     """Make browser screenshot on test failure."""
@@ -458,8 +439,6 @@ def _browser_screenshot_session(
                 session_tmpdir=session_tmpdir,
                 browser_instance=value,
                 splinter_screenshot_dir=splinter_screenshot_dir,
-                splinter_screenshot_getter_html=splinter_screenshot_getter_html,
-                splinter_screenshot_getter_png=splinter_screenshot_getter_png,
                 splinter_screenshot_encoding=splinter_screenshot_encoding,
             )
 
@@ -486,8 +465,6 @@ def browser_instance_getter(
         splinter_window_size,
         splinter_browser_class,
         splinter_clean_cookies_urls,
-        splinter_screenshot_getter_html,
-        splinter_screenshot_getter_png,
         splinter_screenshot_encoding,
         splinter_headless,
         session_tmpdir,
@@ -541,8 +518,6 @@ def browser_instance_getter(
                         session_tmpdir=session_tmpdir,
                         browser_instance=browser,
                         splinter_screenshot_dir=splinter_screenshot_dir,
-                        splinter_screenshot_getter_html=splinter_screenshot_getter_html,
-                        splinter_screenshot_getter_png=splinter_screenshot_getter_png,
                         splinter_screenshot_encoding=splinter_screenshot_encoding,
                     )
             request.addfinalizer(_take_screenshot_on_failure)
