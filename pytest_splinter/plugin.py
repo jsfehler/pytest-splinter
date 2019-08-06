@@ -81,12 +81,6 @@ def Browser(*args, **kwargs):
 
 
 @pytest.fixture(scope='session')  # pragma: no cover
-def splinter_close_browser():
-    """Close browser fixture."""
-    return True
-
-
-@pytest.fixture(scope='session')  # pragma: no cover
 def splinter_webdriver(request):
     """Webdriver fixture."""
     return request.config.option.splinter_webdriver or 'firefox'
@@ -249,7 +243,7 @@ def splinter_webdriver_executable(request):
 
 
 @pytest.fixture(scope='session')
-def browser_pool(request, splinter_close_browser):
+def browser_pool(request):
     """Browser 'pool' to emulate session scope but with possibility to recreate browser."""
     pool = {}
 
@@ -260,7 +254,7 @@ def browser_pool(request, splinter_close_browser):
             except Exception:  # NOQA
                 pass
 
-    if splinter_close_browser:
+    if not request.config.option.no_close_browser:
         request.addfinalizer(fin)
 
     return pool
@@ -494,12 +488,11 @@ def browser_instance_getter(
     def prepare_browser(request, parent, retry_count=3):
         splinter_webdriver = request.getfixturevalue('splinter_webdriver')
         splinter_session_scoped_browser = request.getfixturevalue('splinter_session_scoped_browser')
-        splinter_close_browser = request.getfixturevalue('splinter_close_browser')
         browser_key = id(parent)
         browser = browser_pool.get(browser_key)
         if not splinter_session_scoped_browser:
             browser = get_browser(request)
-            if splinter_close_browser:
+            if not request.config.option.no_close_browser:
                 request.addfinalizer(browser.quit)
         elif not browser:
             browser = browser_pool[browser_key] = get_browser(request)
@@ -664,3 +657,9 @@ def pytest_addoption(parser):  # pragma: no cover
         help="Run the browser in headless mode. Defaults to false. Only applies to Chrome.", action="store",
         dest='splinter_headless', metavar="false|true", type=str, choices=['false', 'true'],
         default='false')
+    group.addoption(
+        "--no-close-browser",
+        help="Do not close the browser when a test finishes",
+        action="store_true",
+        dest='no_close_browser',
+    )
