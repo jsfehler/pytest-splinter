@@ -213,13 +213,6 @@ def splinter_screenshot_dir(request):
     return os.path.abspath(request.config.option.splinter_screenshot_dir)
 
 
-@pytest.fixture(scope='session')
-def splinter_headless(request):
-    """Flag to start Chrome in headless mode.
-    """
-    return request.config.option.splinter_headless == 'true'
-
-
 @pytest.fixture(scope='session')  # pragma: no cover
 def splinter_screenshot_encoding(request):
     """Browser screenshot html encoding."""
@@ -273,7 +266,7 @@ def get_args(request):
     firefox_prof_dir = request.getfixturevalue('splinter_firefox_profile_directory')
     remote_url = request.getfixturevalue('splinter_remote_url')
     executable = request.getfixturevalue('splinter_webdriver_executable')
-    headless = request.getfixturevalue('splinter_headless')
+    headless = request.config.option.splinter_headless
     driver_kwargs = request.getfixturevalue('splinter_driver_kwargs') or {}
 
     kwargs = {}
