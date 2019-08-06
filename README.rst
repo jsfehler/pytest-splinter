@@ -163,10 +163,6 @@ Fixtures
     This fixture gets the value from the command-line option
     `splinter-webdriver-executable` (see below).
 
-* splinter_browser_class
-    Class to use for browser instance.
-    Defaults to `pytest_splinter.plugin.Browser`.
-
 * splinter_clean_cookies_urls
     List of additional urls to clean cookies on. By default, during the preparation of the browser for the test,
     pytest-splinter only cleans cookies for the last visited url from previous test, as it's not possible to clean

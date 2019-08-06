@@ -273,12 +273,6 @@ def session_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('pytest-splinter')
 
 
-@pytest.fixture(scope='session')
-def splinter_browser_class(request):
-    """Browser class to use for browser instance creation."""
-    return Browser
-
-
 def get_args(request):
     """Construct arguments to be passed to webdriver on initialization."""
     driver = request.getfixturevalue('splinter_webdriver')
@@ -463,7 +457,6 @@ def _browser_screenshot_session(
 def browser_instance_getter(
         browser_patches,
         browser_pool,
-        splinter_browser_class,
 ):
     """Splinter browser instance getter. To be used for getting of plugin.Browser's instances.
 
@@ -472,7 +465,7 @@ def browser_instance_getter(
     def get_browser(request, retry_count=3):
         kwargs = get_args(request)
         try:
-            return splinter_browser_class(
+            return Browser(
                 request.getfixturevalue('splinter_webdriver'),
                 visit_condition=request.getfixturevalue('splinter_browser_load_condition'),
                 visit_condition_timeout=request.getfixturevalue('splinter_browser_load_timeout'),
