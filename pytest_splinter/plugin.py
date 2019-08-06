@@ -114,15 +114,6 @@ def splinter_selenium_implicit_wait(request):
 
 
 @pytest.fixture(scope='session')  # pragma: no cover
-def splinter_wait_time(request):
-    """Splinter explicit wait timeout.
-
-    :return: Seconds.
-    """
-    return request.config.option.splinter_wait_time or 5
-
-
-@pytest.fixture(scope='session')  # pragma: no cover
 def splinter_selenium_speed(request):
     """Selenium speed.
 
@@ -469,7 +460,7 @@ def browser_instance_getter(
                 request.getfixturevalue('splinter_webdriver'),
                 visit_condition=request.getfixturevalue('splinter_browser_load_condition'),
                 visit_condition_timeout=request.getfixturevalue('splinter_browser_load_timeout'),
-                wait_time=request.getfixturevalue('splinter_wait_time'),
+                wait_time=request.config.option.splinter_wait_time,
                 **kwargs
             )
         except Exception:  # NOQA
@@ -613,7 +604,7 @@ def pytest_addoption(parser):  # pragma: no cover
     group.addoption(
         "--splinter-wait-time",
         help="splinter explicit wait, seconds", type=int,
-        dest='splinter_wait_time', metavar="SECONDS", default=None)
+        dest='splinter_wait_time', metavar="SECONDS", default=5)
     group.addoption(
         "--splinter-implicit-wait",
         help="pytest-splinter selenium implicit wait, seconds", type=int,
