@@ -266,7 +266,6 @@ def get_args(request):
     firefox_prof_dir = request.getfixturevalue('splinter_firefox_profile_directory')
     remote_url = request.getfixturevalue('splinter_remote_url')
     executable = request.getfixturevalue('splinter_webdriver_executable')
-    headless = request.config.option.splinter_headless
     driver_kwargs = request.getfixturevalue('splinter_driver_kwargs') or {}
 
     kwargs = {}
@@ -301,6 +300,7 @@ def get_args(request):
         if executable:
             kwargs['executable_path'] = executable
 
+        headless = request.config.option.splinter_headless
         if headless:
             kwargs["headless"] = headless
 
@@ -631,9 +631,10 @@ def pytest_addoption(parser):  # pragma: no cover
         dest='splinter_webdriver_executable', metavar="DIR", default='')
     group.addoption(
         "--splinter-headless",
-        help="Run the browser in headless mode. Defaults to false. Only applies to Chrome.", action="store",
-        dest='splinter_headless', metavar="false|true", type=str, choices=['false', 'true'],
-        default='false')
+        help="Run the browser in headless mode.",
+        action="store_true",
+        dest='splinter_headless',
+    )
     group.addoption(
         "--no-close-browser",
         help="Do not close the browser when a test finishes",
