@@ -339,24 +339,6 @@ def get_args(request):
 
 
 @pytest.fixture(scope='session')
-def splinter_screenshot_getter_png():
-    """Screenshot getter function: png."""
-    def getter(browser, path):
-        return browser.screenshot(path)
-    return getter
-
-
-@pytest.fixture(scope='session')
-def splinter_screenshot_getter_html(splinter_screenshot_encoding):
-    """Screenshot getter function: html."""
-    def getter(browser, path):
-        return browser.html_snapshot(
-            path, encoding=splinter_screenshot_encoding,
-        )
-    return getter
-
-
-@pytest.fixture(scope='session')
 def splinter_clean_cookies_urls():
     """List of urls to clean cookies on their domains."""
     return []
@@ -368,8 +350,6 @@ def _take_screenshot(
         fixture_name,
         session_tmpdir,
         splinter_screenshot_dir,
-        splinter_screenshot_getter_html,
-        splinter_screenshot_getter_png,
         splinter_screenshot_encoding,
 ):
     """Capture a screenshot as .png and .html.
@@ -395,8 +375,10 @@ def _take_screenshot(
     LOGGER.info('Saving screenshot to {}'.format(screenshot_dir))
 
     try:
-        screenshot_html_path = splinter_screenshot_getter_html(browser_instance, screenshot_path)
-        screenshot_png_path = splinter_screenshot_getter_png(browser_instance, screenshot_path)
+        screenshot_html_path = browser_instance.html_snapshot(
+            screenshot_path, encoding=splinter_screenshot_encoding,
+        )
+        screenshot_png_path = browser_instance.screenshot(screenshot_path)
 
         if request.node.splinter_failure.longrepr:
             reprtraceback = request.node.splinter_failure.longrepr.reprtraceback
@@ -428,8 +410,6 @@ def _browser_screenshot_session(
         splinter_session_scoped_browser,
         splinter_screenshot_dir,
         splinter_make_screenshot_on_failure,
-        splinter_screenshot_getter_html,
-        splinter_screenshot_getter_png,
         splinter_screenshot_encoding,
 ):
     """Make browser screenshot on test failure."""
@@ -460,8 +440,6 @@ def _browser_screenshot_session(
                 session_tmpdir=session_tmpdir,
                 browser_instance=value,
                 splinter_screenshot_dir=splinter_screenshot_dir,
-                splinter_screenshot_getter_html=splinter_screenshot_getter_html,
-                splinter_screenshot_getter_png=splinter_screenshot_getter_png,
                 splinter_screenshot_encoding=splinter_screenshot_encoding,
             )
 
@@ -478,19 +456,13 @@ def browser_instance_getter(
     """
     def get_browser(request, retry_count=3):
         kwargs = get_args(request)
-        try:
-            return splinter_browser_class(
-                request.getfixturevalue('splinter_webdriver'),
-                visit_condition=request.getfixturevalue('splinter_browser_load_condition'),
-                visit_condition_timeout=request.getfixturevalue('splinter_browser_load_timeout'),
-                wait_time=request.getfixturevalue('splinter_wait_time'),
-                **kwargs
-            )
-        except Exception:  # NOQA
-            if retry_count > 1:
-                return get_browser(request, retry_count - 1)
-            else:
-                raise
+        return splinter_browser_class(
+            request.getfixturevalue('splinter_webdriver'),
+            visit_condition=request.getfixturevalue('splinter_browser_load_condition'),
+            visit_condition_timeout=request.getfixturevalue('splinter_browser_load_timeout'),
+            wait_time=request.getfixturevalue('splinter_wait_time'),
+            **kwargs
+        )
 
     def prepare_browser(request, parent, retry_count=3):
         splinter_webdriver = request.getfixturevalue('splinter_webdriver')
@@ -515,15 +487,11 @@ def browser_instance_getter(
                         session_tmpdir=request.getfixturevalue('session_tmpdir'),
                         browser_instance=browser,
                         splinter_screenshot_dir=request.getfixturevalue('splinter_screenshot_dir'),
-                        splinter_screenshot_getter_html=request.getfixturevalue('splinter_screenshot_getter_html'),
-                        splinter_screenshot_getter_png=request.getfixturevalue('splinter_screenshot_getter_png'),
                         splinter_screenshot_encoding=request.getfixturevalue('splinter_screenshot_encoding'),
                     )
             request.addfinalizer(_take_screenshot_on_failure)
 
         try:
-            if splinter_webdriver not in browser.driver_name.lower():
-                raise IOError('webdriver does not match')
             if hasattr(browser, 'driver'):
                 browser.driver.implicitly_wait(request.getfixturevalue('splinter_selenium_implicit_wait'))
                 browser.driver.set_speed(request.getfixturevalue('splinter_selenium_speed'))
