@@ -492,6 +492,8 @@ def browser_instance_getter(
             request.addfinalizer(_take_screenshot_on_failure)
 
         try:
+            if splinter_webdriver not in browser.driver_name.lower():
+                raise IOError('webdriver does not match')
             if hasattr(browser, 'driver'):
                 browser.driver.implicitly_wait(request.getfixturevalue('splinter_selenium_implicit_wait'))
                 browser.driver.set_speed(request.getfixturevalue('splinter_selenium_speed'))
