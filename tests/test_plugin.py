@@ -200,11 +200,14 @@ def test_screenshot(simple_page, browser):
     assert False
     """.format(simple_page_content), "-vl", "-r w")
 
-    dir_content = os.listdir('test_browser_screenshot_normal')
-    matches = [i for i in dir_content if i.startswith('test_screenshot-browser') and i.endswith('.html')]
-    assert 1 == len(matches)
+    assert testdir.tmpdir.join('test_browser_screenshot_normal', 'test_screenshot-browser.png')
+    content = testdir.tmpdir.join('test_browser_screenshot_normal', 'test_screenshot-browser.html').read()
 
-    content = testdir.tmpdir.join('test_browser_screenshot_normal', matches[0]).read()
+    # dir_content = os.listdir('test_browser_screenshot_normal')
+    # matches = [i for i in dir_content if i.startswith('test_screenshot-browser') and i.endswith('.html')]
+    # assert 1 == len(matches)
+
+    # content = testdir.tmpdir.join('test_browser_screenshot_normal', matches[0]).read()
     assert_valid_html_screenshot_content(content)
 
 
